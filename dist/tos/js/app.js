@@ -31,66 +31,45 @@
   window.addEventListener('hashchange', route);
 
   /* ------------------------------ HOME ------------------------------ */
+  const TAG = { 1: 'How far a beam bends and tilts', 2: 'Beams with one support too many', 3: 'Let the joints twist, then balance them', 4: 'Share moments between joints, round by round', 5: 'Arches that push, cables that pull' };
   function renderHome() {
-    const papers = C.PAPERS;
-    const rows = C.FAMILIES.map((fa) => {
-      const cells = papers.map((p) => fa[p.id] ? `<td class="hit${/deleted/.test(fa[p.id]) ? ' del' : ''}">${fa[p.id]}</td>` : '<td class="miss">—</td>').join('');
-      const n = papers.filter((p) => fa[p.id] && !/deleted/.test(fa[p.id])).length;
-      const go = fa.gen ? `<a class="mini" href="#m${fa.m}-practice" data-gen="${fa.gen}">Practise</a>` : `<a class="mini" href="#m${fa.m}-parta">Revise</a>`;
-      return `<tr><td><span class="pill p${fa.part}">${fa.part}</span></td><td>M${fa.m}</td><td class="fam">${fa.name}</td>${cells}<td><span class="freq f${n}">${n}/3</span></td><td>${go}</td></tr>`;
-    }).join('');
     view().innerHTML = `
-      <section class="hero">
-        <div class="hero-txt">
-          <p class="eyebrow">KTU · B.Arch S3 · AET201 · 2021 scheme</p>
-          <h1>Theory of Structures III, one load case at a time</h1>
-          <p class="lede">Learn the idea, watch the beam bend, then solve real KTU questions with new numbers each time. If an answer is wrong you see what would happen to the real structure. The working is shown step by step, with every number traced back to where it came from.</p>
-          <div class="cta"><a class="btn primary" href="#m1">Start with Module 1</a><a class="btn" href="#exam">Take a mock exam</a><a class="btn" href="#pyq">Past papers</a></div>
+      <section class="home-hero">
+        <div class="hh-text">
+          <p class="eyebrow">AET201 · Theory of Structures III</p>
+          <h1>See how structures <span class="grad">bend, push and pull</span>.</h1>
+          <p class="lede">Pick a module below. Every module works the same simple way:</p>
+          <ol class="path">
+            <li><span class="pi">1</span><b>Learn</b><small>the idea, animated</small></li>
+            <li><span class="pi">2</span><b>Play</b><small>in the lab</small></li>
+            <li><span class="pi">3</span><b>Solve</b><small>real questions, step by step</small></li>
+          </ol>
+          <div class="cta"><a class="btn primary big" href="#m1">Start with Module 1 →</a><button class="btn ghost big" data-tour>Show me around</button></div>
         </div>
-        <div class="hero-viz" id="heroViz"></div>
-      </section>
-      <section class="band">
-        <div class="facts">
-          <div><b>60</b><span>marks · 3 hours</span></div>
-          <div><b>5 × 4</b><span>Part A: one theory question per module, answer all</span></div>
-          <div><b>5 × 8</b><span>Part B: choose 1 of 2 per module</span></div>
-          <div><b>16</b><span>question families repeat every paper, only the numbers change</span></div>
-        </div>
+        <div class="hh-viz"><div class="demo hero-demo"><div class="dstage"></div><div class="dbar"><button class="dplay" aria-label="Pause">❚❚</button><p class="dcap"></p><span class="ddots"></span></div></div></div>
       </section>
       <section>
-        <h2>What repeats in the past papers</h2>
-        <p class="muted">Analysis of Dec 2022, Jun 2024 (supplementary) and Nov 2024. Questions marked deleted were removed by KTU's own valuation scheme as outside the syllabus.</p>
-        <div class="tbl"><table class="heat"><thead><tr><th>Part</th><th>Mod</th><th>Question family</th>${papers.map((p) => `<th>${p.name}<small>${p.sub.split(' · ')[0]}</small></th>`).join('')}<th>Freq.</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
-        <div class="grid2">
-          <div class="card note-card"><h3>Pattern in one line per module</h3><ul>
-            <li><b>M1</b> Cantilever slope & deflection with 1–2 point loads ± UDL (moment area / conjugate beam). Every paper.</li>
-            <li><b>M2</b> Propped cantilever with UDL <i>or</i> two span beam by three moment theorem. Both appeared in 2024.</li>
-            <li><b>M3</b> Continuous beam (2–3 spans) <i>or</i> non-sway frame (T-frame / symmetric portal) by slope deflection.</li>
-            <li><b>M4</b> The <i>same</i> kinds of beam and frame by moment distribution. Jun 2024 literally said "Analyse Q10 by MDM".</li>
-            <li><b>M5</b> Three hinged arch (parabolic or circular) <i>and</i> a cable with point loads / cable derivation. Every paper.</li>
-          </ul></div>
-          <div class="card note-card"><h3>Is any Indian code book used?</h3>
-            <p><b>No.</b> The AET201 syllabus lists only textbooks (Junnarkar & Shah, Punmia, Ramamrutham, Ratwani, Menon, Timoshenko, Jain). No IS code is prescribed and no past question needs one. Numerical data such as E = 200 GPa is always given in the question.</p>
-            <p class="muted">SP 41 appears in the same syllabus PDF, but under ART201 Climate & Built Form, not this course. For real-world context the labs mention IS 456:2000 (RCC deflection limit span/250, cl. 23.2) and the steel E of IS 800:2007, marked as outside the exam syllabus.</p>
-          </div>
-        </div>
-      </section>
-      <section>
-        <h2>Modules</h2>
-        <div class="mods">${C.MODULES.map((m) => { const gens = m.gens; const solved = gens.reduce((s, g) => s + ((progress[g] || {}).solved || 0), 0); return `<a class="mod" href="#m${m.n}"><span class="mnum">M${m.n}</span><b>${m.name}</b><span class="muted small">${m.syllabus}</span><span class="small solved">${solved} solved</span></a>`; }).join('')}</div>
+        <h2 class="sec-h">Choose a module</h2>
+        <div class="mgrid">${C.MODULES.map((m) => { const solved = m.gens.reduce((t, g) => t + ((progress[g] || {}).solved || 0), 0); return `
+          <article class="mcard" style="--i:${m.n}">
+            <a class="mc-top" href="#m${m.n}"><span class="mc-n">0${m.n}</span>${m.n === 1 ? '<span class="mc-badge">Start here</span>' : ''}<h3>${m.name}</h3><p>${TAG[m.n]}</p></a>
+            <p class="mc-k">Questions you will solve</p>
+            <div class="qchips">${m.gens.map((g) => `<a class="qchip" href="#m${m.n}-practice" data-gen="${g}">${P[g].title}</a>`).join('')}</div>
+            <div class="mc-actions"><a href="#m${m.n}">Learn</a><a href="#m${m.n}-lab">Lab</a><a href="#m${m.n}-practice">Practise</a>${solved ? `<span class="mc-solved">✓ ${solved}</span>` : ''}</div>
+          </article>`; }).join('')}</div>
       </section>`;
-    $$('a[data-gen]', view()).forEach((a) => a.addEventListener('click', () => { pending = { gen: a.dataset.gen, preset: 0 }; }));
-    const demo = window.makeProblem('m2-propped-udl', { L: 6, w: 27 });
-    const b = V.beam($('#heroViz'), demo.scene); b.stress(true); b.play();
+    $$('a[data-gen]', view()).forEach((a) => a.addEventListener('click', () => { pending = { gen: a.dataset.gen, preset: null }; }));
+    $('[data-tour]', view()).addEventListener('click', startTour);
+    const hd = $('.hero-demo', view()); const d = mountDemo(hd, window.DEMOS[2][4]); d.resume();
   }
 
   /* ------------------------------ MODULE ------------------------------ */
   function renderModule(n, tab) {
     const M = C.MODULES[n - 1];
-    const tabs = [['learn', 'Learn'], ['lab', 'Lab'], ['practice', 'Practise'], ['parta', 'Part A']];
+    const tabs = [['learn', 'Learn'], ['lab', 'Lab'], ['practice', 'Practise'], ['parta', 'Theory questions']];
     view().innerHTML = `
       <section class="mhead">
-        <p class="eyebrow">Module ${n} · ${M.co.split(':')[0]}</p>
+        <p class="eyebrow">Module ${n}</p>
         <h1>${M.name}</h1>
         <p class="muted">${M.syllabus}</p>
         <nav class="tabs" role="tablist">${tabs.map(([k, l]) => `<a role="tab" href="#m${n}-${k}" class="${k === tab ? 'on' : ''}" aria-selected="${k === tab}">${l}</a>`).join('')}</nav>
@@ -198,6 +177,7 @@
             <button class="btn sm ghost" data-act="new" title="Same question, new numbers">↻ New numbers</button></span>`}
         </div>
         <p class="qtext">${prob.statement}</p>
+        ${opts.exam ? '' : `<details class="approach"><summary><span class="ap-t">How to approach this question</span><span class="ap-s">Goal, strategy and why each step is needed</span></summary><div class="ap-body"></div></details>`}
         <div class="vizbox">
           <div class="vstage"></div>
           <div class="vtabs" role="tablist"></div>
@@ -217,6 +197,8 @@
       $('[data-act=new]', card).addEventListener('click', () => mountProblem(host, gen, null));
       const sel = $('select', card); if (sel) sel.addEventListener('change', () => mountProblem(host, gen, sel.value === '' ? null : +sel.value));
       $('[data-act=solve]', card).addEventListener('click', () => window.Walk.open(prob));
+      const ap = $('.approach', card);
+      ap.addEventListener('toggle', () => { if (!ap.open || ap._done) return; ap._done = true; const steps = window.Walk.buildSteps(prob); $('.ap-body', ap).innerHTML = window.Walk.planHTML(prob, steps) + '<p class="small muted">Tap a step to watch it explained.</p>'; $$('[data-go]', ap).forEach((b) => b.addEventListener('click', () => window.Walk.open(prob, +b.dataset.go + 1))); });
     }
     const form = $('form', card);
     form.addEventListener('submit', (e) => { e.preventDefault(); const res = checkAnswers(card, prob, opts.exam); if (opts.onCheck) opts.onCheck(res); });
@@ -373,6 +355,33 @@
     if (n === 4) return lab4(body);
     return lab5(body);
   }
+  function missions(body, list) {
+    const ctl = $('.lab-ctl', body); const box = h('<div class="mission" aria-live="polite"></div>'); ctl.prepend(box);
+    let i = 0, done = false;
+    const dots = () => `<span class="m-dots">${list.map((_, k) => `<i class="${k < i ? 'done' : k === i ? 'on' : ''}"></i>`).join('')}</span>`;
+    const target = (m) => { $$('.pulse-target', body).forEach((x) => x.classList.remove('pulse-target')); const t = m && m.el && $(m.el, body); if (t) (t.closest('.sl') || t).classList.add('pulse-target'); };
+    const render = () => {
+      done = false;
+      if (i >= list.length) { target(null); box.className = 'mission all'; box.innerHTML = `<div class="m-head"><span class="m-k">All missions complete</span>${dots()}</div><p class="m-do">Now play freely: every number and picture updates live.</p><button class="btn sm ghost" data-m="again">Do them again</button>`; $('[data-m=again]', box).addEventListener('click', () => { i = 0; render(); }); return; }
+      const m = list[i]; box.className = 'mission';
+      box.innerHTML = `<div class="m-head"><span class="m-k">Mission ${i + 1} of ${list.length}</span>${dots()}</div><p class="m-do">${m.do}</p>${m.look ? `<p class="m-look">Watch: ${m.look}</p>` : ''}${m.manual ? '<button class="btn sm primary" data-m="ok">I have looked</button>' : ''}`;
+      target(m);
+      if (m.manual) $('[data-m=ok]', box).addEventListener('click', win);
+      setTimeout(check, 30);
+    };
+    function win() {
+      if (done) return; done = true; const m = list[i]; target(null);
+      box.className = 'mission won';
+      box.innerHTML = `<div class="m-head"><span class="m-k">✓ Mission ${i + 1} done</span>${dots()}</div><p class="m-why"><b>What happened, and why:</b> ${m.why}</p><button class="btn sm primary" data-m="next">${i === list.length - 1 ? 'Finish' : 'Next mission →'}</button>`;
+      $('[data-m=next]', box).addEventListener('click', () => { i++; render(); });
+    }
+    function check() { if (done || i >= list.length) return; const m = list[i]; if (!m.manual && m.check()) win(); }
+    body.addEventListener('input', () => setTimeout(check, 60));
+    body.addEventListener('click', (e) => { if (!box.contains(e.target)) setTimeout(check, 120); });
+    body.addEventListener('change', () => setTimeout(check, 120));
+    render();
+  }
+  const valOf = (body, id) => +$('#' + id, body).value;
   function bindSliders(body, ids, fn) { ids.forEach((id) => { const i = $('#' + id, body); i.addEventListener('input', () => { $('#' + id + '-o', body).textContent = i.value; fn(); }); }); fn(); }
 
   function lab1(body) {
@@ -417,6 +426,13 @@
       V.diagram($('#l1bmd', body), L, bm, loads, 'Bending moment diagram', 'kN·m', { keyX: [0, L, a] });
     };
     bindSliders(body, ['l1L', 'l1P', 'l1a', 'l1w', 'l1b', 'l1d'], run);
+    const ss = () => $('[data-s="ss"]', body).classList.contains('on');
+    missions(body, [
+      { do: 'Drag <b>Point load P</b> up to 80 kN or more.', el: '#l1P', look: 'the tip and the "Max deflection" number.', check: () => valOf(body, 'l1P') >= 80, why: 'The beam bent about twice as much. Beams are linear: double the load gives double the moment and double the deflection. That is why every exam answer simply scales with the load.' },
+      { do: 'Drag <b>Depth D</b> up to 700 mm or more.', el: '#l1d', look: 'the deflection bar.', check: () => valOf(body, 'l1d') >= 700, why: 'The deflection dropped sharply. Stiffness I = bD³/12 grows with the cube of the depth: 1.5× deeper is 3.4× stiffer. That is why real beams are deep, not wide.' },
+      { do: 'Switch the support to <b>Simply supported</b>.', el: '[data-s="ss"]', look: 'where the red (tension) colour goes.', check: ss, why: 'The beam now sags in the middle, so the tension (red) moves from the top to the bottom. That is why steel bars go at the top of a cantilever but at the bottom of a simple beam.' },
+      { do: 'Drag <b>P position</b> to the middle (50%).', el: '#l1a', look: 'the peak of the bending moment diagram.', check: () => ss() && Math.abs(valOf(body, 'l1a') - 50) <= 5, why: 'The biggest moment sits right under the load, and it is largest when the load is in the middle: PL/4. Designers check this worst position.' },
+    ]);
   }
 
   function lab2(body) {
@@ -443,6 +459,11 @@
       });
     };
     bindSliders(body, ['l2L', 'l2w'], run);
+    missions(body, [
+      { do: 'Drag the <b>UDL w</b> to 50 kN/m or more.', el: '#l2w', look: 'all three moment diagrams.', check: () => valOf(body, 'l2w') >= 50, why: 'All three grew by the same factor, because moment is proportional to load. Their ratio stays fixed: wL²/8 for the first two, wL²/12 for the fixed beam.' },
+      { do: 'Drag the <b>Span L</b> to 10 m.', el: '#l2L', look: 'the "Max deflection" numbers.', check: () => valOf(body, 'l2L') >= 10, why: 'Moment grows with L² but deflection with L⁴: a span 1.7× longer bends about 8× more. Long spans need much deeper beams or extra supports.' },
+      { do: 'Compare the three deflection numbers, top to bottom.', manual: true, why: 'Each extra restraint cuts the sag: 5wL⁴/384 → wL⁴/185 → wL⁴/384, roughly 1 : 0.4 : 0.2. Indeterminate beams are stiffer. The price is that statics alone cannot solve them, which is what this module is about.' },
+    ]);
   }
 
   function lab3(body) {
@@ -473,6 +494,12 @@
         <div class="ro meter ${balanced ? 'good' : 'bad'}"><span>ΣM at joint B = M<sub>BA</sub> + M<sub>BC</sub> = <b>${f(sum)}</b> kN·m</span><div class="bar mid"><i style="left:50%;width:${Math.min(50, Math.abs(sum) / 2)}%;${sum < 0 ? 'transform:translateX(-100%)' : ''}"></i></div><small>${balanced ? 'Balanced. This θ is the slope deflection answer.' : sum > 0 ? 'Too much clockwise moment at B: turn θ the other way (more negative).' : 'Too much anticlockwise moment: increase θ.'}</small></div>`;
     };
     bindSliders(body, ['l3w', 'l3P', 'l3L1', 'l3L2', 'l3t'], run);
+    const balanced = () => !!$('#l3eq .meter.good', body);
+    missions(body, [
+      { do: 'Drag <b>EIθB</b> until the ΣM bar turns green.', el: '#l3t', look: 'the ΣM at joint B bar.', check: balanced, why: 'You just solved slope deflection by hand: the twist that makes the moments at joint B add to zero is exactly what the joint equation finds.' },
+      { do: 'Now push the <b>UDL on AB</b> up to 35 or more.', el: '#l3w', look: 'the bar turns red again.', check: () => valOf(body, 'l3w') >= 35 && !balanced(), why: 'More load on AB pushes more moment into joint B, so the old twist no longer balances it. Every load case has its own θ.' },
+      { do: 'Press <b>Snap to the solution</b>.', el: '#l3snap', check: () => valOf(body, 'l3w') >= 35 && balanced(), why: 'The exact θ from the joint equation balances it at once. In the exam you calculate this θ instead of hunting for it.' },
+    ]);
     $('#l3snap', body).addEventListener('click', () => { const i = $('#l3t', body); i.value = Math.round(body._sol * 2) / 2; $('#l3t-o', body).textContent = i.value; run(); const exact = body._sol; $('#l3eq', body).insertAdjacentHTML('beforeend', `<p class="small muted">Exact: EIθ<sub>B</sub> = ${f(exact, 3)} (slider rounds to 0.5)</p>`); });
   }
 
@@ -504,6 +531,12 @@
     $('#l4r', body).addEventListener('click', () => { clearInterval(timer); shown = 1; draw(); });
     $('#l4a', body).addEventListener('click', () => { clearInterval(timer); timer = setInterval(() => { if (shown >= md.rows.length || !document.body.contains(body)) return clearInterval(timer); shown++; draw(); }, 650); });
     load();
+    const first = $('#l4p', body).value;
+    missions(body, [
+      { do: 'Press <b>Next row</b> a few times.', el: '#l4n', look: 'the dials under each joint.', check: () => $$('#l4tbl tbody tr', body).length >= 6, why: 'Each Balance row cancels the unbalanced moment at a joint. Each Carry over sends half of it to the far end, which slightly unbalances the neighbour again.' },
+      { do: 'Press <b>Play all</b> and wait until every dial is green.', el: '#l4a', check: () => $$('#l4dials .dial', body).length > 0 && $$('#l4dials .dial', body).every((d) => d.classList.contains('good')) && /Final/.test($('#l4tbl .final th', body).textContent), why: 'Each round is smaller than the last, so the totals settle to the exact answer. Moment distribution is just repeated sharing, with no simultaneous equations.' },
+      { do: 'Choose <b>another beam</b> from the list.', el: '#l4p', check: () => $('#l4p', body).value !== first, why: 'The same routine works for any beam or frame without sway: lock, balance, carry over, repeat.' },
+    ]);
   }
 
   function lab5(body) {
@@ -529,13 +562,33 @@
       $('#l5cr', body).innerHTML = `<div class="ro"><span>H = wL²/8d</span><b>${f(cr.H)} kN</b></div><div class="ro"><span>T<sub>max</sub></span><b>${f(cr.Tmax)} kN</b></div><div class="ro meter ${cr.Tmax > 2400 ? 'bad' : 'good'}"><span>Pull on a cable rated 2400 kN (span 40 m)</span><div class="bar"><i style="width:${level}%"></i></div><small>${cr.Tmax > 2400 ? 'Over capacity: give the cable more dip.' : 'OK'}</small></div>`;
     };
     bindSliders(body, ['l5L', 'l5h', 'l5P', 'l5x', 'l5w', 'l5d', 'l5cw'], run);
+    missions(body, [
+      { do: 'Lower the arch <b>Rise h</b> to 2 m.', el: '#l5h', look: 'the Thrust H number.', check: () => valOf(body, 'l5h') <= 2, why: 'H went up: H = (beam moment at crown) ÷ h. A flat arch pushes its supports much harder, so it needs bigger abutments.' },
+      { do: 'Set the <b>Point load</b> to 0 and the <b>Full span UDL</b> to 10 or more.', el: '#l5P', look: 'the shaded arch moment.', check: () => valOf(body, 'l5P') === 0 && valOf(body, 'l5w') >= 10, why: 'The arch moment vanished. A parabola is the perfect (funicular) shape for a uniform load, so the arch is in pure compression with no bending.' },
+      { do: 'Pull the <b>Cable dip d</b> down to 2 m.', el: '#l5d', look: 'the T max and the capacity bar.', check: () => valOf(body, 'l5d') <= 2, why: 'The pull shot up: H = wL²/8d, so halving the dip doubles the pull. That is why a tight washing line snaps.' },
+    ]);
   }
 
   /* ------------------------------ PYQ ------------------------------ */
   function renderPYQ() {
-    view().innerHTML = `<section class="mhead"><p class="eyebrow">Previous year questions</p><h1>Past papers, solvable</h1><p class="muted">Every numerical question can be opened with its exact exam numbers. Solve it, check it, then press <b>New numbers</b> to practise the same family.</p></section>
+    const papers = C.PAPERS;
+    const rows = C.FAMILIES.map((fa) => {
+      const cells = papers.map((p) => fa[p.id] ? `<td class="hit${/deleted/.test(fa[p.id]) ? ' del' : ''}">${fa[p.id]}</td>` : '<td class="miss">—</td>').join('');
+      const n = papers.filter((p) => fa[p.id] && !/deleted/.test(fa[p.id])).length;
+      const go = fa.gen ? `<a class="mini" href="#m${fa.m}-practice" data-gen="${fa.gen}" data-preset="">Practise</a>` : `<a class="mini" href="#m${fa.m}-parta">Revise</a>`;
+      return `<tr><td><span class="pill p${fa.part}">${fa.part}</span></td><td>M${fa.m}</td><td class="fam">${fa.name}</td>${cells}<td><span class="freq f${n}">${n}/3</span></td><td>${go}</td></tr>`;
+    }).join('');
+    view().innerHTML = `<section class="mhead"><p class="eyebrow">Previous year questions</p><h1>Past papers</h1><p class="muted">Dec 2022, Jun 2024 and Nov 2024. The same question families repeat; only the numbers change. Open any question with its exact exam numbers.</p></section>
+      <section>
+        <h2 class="sec-h">What repeats</h2>
+        <div class="tbl"><table class="heat"><thead><tr><th>Part</th><th>Mod</th><th>Question family</th>${papers.map((p) => `<th>${p.name}<small>${p.sub.split(' · ')[0]}</small></th>`).join('')}<th>Freq.</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+        <div class="grid2">
+          <div class="card note-card"><h3>Exam pattern</h3><p>60 marks, 3 hours. Part A: 5 theory questions × 4 marks, one per module, answer all. Part B: 2 questions per module, answer one, 8 marks each.</p></div>
+          <div class="card note-card"><h3>Indian code books</h3><p>None are prescribed for AET201, and no past question needs one. Values such as E are always given in the question.</p></div>
+        </div>
+      </section>
       <section class="papers">${C.PAPERS.map((p) => `<article class="paper card"><h2>${p.name}</h2><p class="small muted">${p.sub}</p>${C.PYQ.filter((q) => q.p === p.id).map((q) => `<div class="pq"><span class="qno">Q${q.q}</span><span class="pill">M${q.m}</span><div><p>${q.t}</p>${q.note ? `<p class="small note">${q.note}</p>` : ''}</div>${q.gen ? `<a class="mini" href="#m${q.m}-practice" data-gen="${q.gen}" data-preset="${q.preset}">Solve</a>` : '<span class="mini off">—</span>'}</div>`).join('')}</article>`).join('')}</section>`;
-    $$('a[data-gen]', view()).forEach((a) => a.addEventListener('click', () => { pending = { gen: a.dataset.gen, preset: +a.dataset.preset }; }));
+    $$('a[data-gen]', view()).forEach((a) => a.addEventListener('click', () => { pending = { gen: a.dataset.gen, preset: a.dataset.preset === '' ? null : +a.dataset.preset }; }));
   }
 
   /* ------------------------------ MOCK EXAM ------------------------------ */
@@ -582,12 +635,63 @@
     examTimer = setInterval(tick, 1000);
   }
 
+  /* ------------------------------ guided tours ------------------------------ */
+  function startTour() {
+    if (document.querySelector('.walk')) return window.Tour.start(window.Tour.walk());
+    const hash = (location.hash || '#home').slice(1); const mm = hash.match(/^m([1-5])(?:-(\w+))?$/); const tab = mm ? (mm[2] || 'learn') : hash;
+    const T0 = {
+      home: [
+        { sel: '.home-hero h1', title: 'Hi! I am your guide', text: 'This app teaches Theory of Structures III by letting you <b>see</b> beams, frames, arches and cables move.' },
+        { sel: '.path', title: 'The 3-step path', text: 'Every module works the same way: <b>Learn</b> the idea with animations, <b>Play</b> with it in the lab, then <b>Solve</b> real questions with a step-by-step guide.' },
+        { sel: '.mcard', title: 'Start here', text: 'Modules build on each other, so begin with Module 1. Tap a card to open it.' },
+        { sel: '.mcard .qchips', title: 'Or jump straight to a question', text: 'Each chip is a type of question that keeps coming back. Tap one to practise it directly.' },
+        { sel: '.nav', title: 'The menu', text: 'Switch modules here. Past papers and a mock exam are here too when you are ready.' },
+        { sel: '.guide-fab', title: 'Need me again?', text: 'Tap this button on any page and I will show you around that page.' },
+      ],
+      learn: [
+        { sel: '.tabs', title: 'Four tabs per module', text: '<b>Learn</b> the idea, play in the <b>Lab</b>, <b>Practise</b> questions, and revise <b>Theory questions</b>.' },
+        { sel: '.demo', title: 'Watch the idea move', text: 'Each card plays a short animation with a caption. Tap the picture to go to the next frame.' },
+        { sel: '.dplay', title: 'Pause any time', text: 'Pause to read the caption, then play again.' },
+        { sel: '.simple', title: 'In plain words', text: 'The same idea in one simple sentence. No formulas needed yet.' },
+        { sel: 'details.exam', title: 'Exam formulas', text: 'Open this when you want the formulas and the exact definitions to write in the exam.' },
+        { sel: '.next-row', title: 'Then play', text: 'When the idea makes sense, try it in the lab, then practise real questions.' },
+      ],
+      lab: [
+        { sel: '.mission', title: 'Follow the missions', text: 'Each mission tells you one thing to try. When you do it, you get an explanation of what happened and why.' },
+        { sel: '.pulse-target', title: 'This control glows', text: 'The glowing control is the one to use for this mission. Drag or tap it.' },
+        { sel: '.lab-out', title: 'Watch here', text: 'The picture and the numbers react instantly, so you can see cause and effect.' },
+      ],
+      practice: [
+        { sel: '.chips', title: 'Pick a question type', text: 'These are the question types that repeat in KTU papers for this module.' },
+        { sel: '.qtools select', title: 'Real exam numbers', text: 'Load the exact numbers from a past paper.' },
+        { sel: '[data-act=new]', title: 'Fresh numbers', text: 'Same question, new numbers, as many times as you like.' },
+        { sel: '.qtext', title: 'The question', text: '<b class="g">Highlighted</b> numbers are the data you will use.' },
+        { sel: 'details.approach', title: 'Plan first', text: 'Open this before solving. It shows the goal, the strategy, and why each step is needed.' },
+        { sel: '.vizbox', title: 'The structure', text: 'Switch between deflected shape, tension/compression, shear and moment diagrams.' },
+        { sel: '.howbtn', title: 'Stuck? Watch it solved', text: 'A guided, animated solution, one step at a time, with the reason for every step.' },
+        { sel: '.answers', title: 'Try it yourself', text: 'Type your answers and press Check. If one is wrong you will see what would happen to the real structure.' },
+      ],
+      parta: [
+        { sel: '.pa textarea', title: 'Write first', text: 'Write your answer as in the exam. Short is fine.' },
+        { sel: '.pa [data-act=reveal]', title: 'Then compare', text: 'See a model answer and which key ideas you included.' },
+      ],
+      pyq: [
+        { sel: '.heat', title: 'What repeats', text: 'Each row is a question type, each column is a paper. Most types appear every time.' },
+        { sel: '.pq .mini', title: 'Solve it here', text: 'Opens the question with its exact exam numbers, ready to solve or watch.' },
+      ],
+      exam: [{ sel: '#exStart', title: 'A full paper', text: 'Five theory questions plus one problem per module, with a 3-hour timer. Problems are marked automatically.' }],
+    };
+    window.Tour.start(T0[tab] || T0.home);
+  }
+  const fab = $('#guideFab');
+  if (fab) { fab.addEventListener('click', startTour); if (!store.get('toured', false)) { fab.classList.add('hello'); fab.addEventListener('click', () => { store.set('toured', true); fab.classList.remove('hello'); }, { once: true }); } }
+
   /* ------------------------------ theme ------------------------------ */
   const tbtn = $('#themeBtn');
   if (tbtn) {
     const saved = store.get('theme', null); if (saved) document.documentElement.setAttribute('data-theme', saved);
     tbtn.addEventListener('click', () => {
-      const cur = document.documentElement.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      const cur = document.documentElement.getAttribute('data-theme') || 'dark';
       const nx = cur === 'dark' ? 'light' : 'dark'; document.documentElement.setAttribute('data-theme', nx); store.set('theme', nx);
     });
   }

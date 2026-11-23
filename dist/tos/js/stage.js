@@ -11,18 +11,39 @@
   const W = 800, HT = 440;
 
   /* ---------- small drawing helpers ---------- */
-  let delay = 0, fs = 1;
+  let delay = 0, fs = 1, placed = [];
+  const hit = (r) => placed.some((q) => r.x < q.x + q.w && r.x + r.w > q.x && r.y < q.y + q.h && r.y + r.h > q.y);
+  const free = (x, y, w, h) => { // nudge a label box up/down until it does not overlap another label
+    const offs = [0, -1, 1, -2, 2, -3, 3]; const stepY = h + 4;
+    for (const o of offs) { const r = { x, y: y + o * stepY, w, h }; if (!hit(r)) { placed.push(r); return o * stepY; } }
+    placed.push({ x, y, w, h }); return 0;
+  };
+  const reserve = (g) => g.querySelectorAll('text').forEach((t) => { try { const b = t.getBBox(); if (b.width) placed.push({ x: b.x - 2, y: b.y - 1, w: b.width + 4, h: b.height + 2 }); } catch (e) { /* not rendered */ } });
+  const spark = (g, p, extra) => { // glowing dot that travels along a freshly drawn line
+    const sp = el('path', { d: p.getAttribute('d'), class: 'st-spark' + (extra ? ' ' + extra : ''), pathLength: 1 }, g);
+    sp.style.animationDelay = (parseFloat(p.style.animationDelay || '0') + 0.8).toFixed(2) + 's';
+    return sp;
+  };
   const step = () => { delay = Math.min(1.1, delay + 0.12); return delay.toFixed(2) + 's'; };
   const enter = (node, kind) => { node.classList.add(kind === 'draw' ? 'st-draw' : 'st-in'); node.style.animationDelay = step(); return node; };
   const line = (g, x1, y1, x2, y2, cls, marker, draw) => {
     const p = el('path', { d: `M${x1},${y1} L${x2},${y2}`, class: cls, pathLength: 1 }, g);
     if (marker) p.setAttribute('marker-end', `url(#${marker})`);
-    return draw === false ? p : enter(p, 'draw');
+    if (draw === false) return p;
+    enter(p, 'draw');
+    if (/st-force|st-flow|st-tan/.test(cls)) spark(g, p, /st-force/.test(cls) ? 'force' : '');
+    return p;
   };
-  const label = (g, x, y, s, cls, anchor) => enter(txt(g, x, y, s, 'lbl ' + (cls || 'st-lab'), anchor || 'middle'));
+  const label = (g, x, y, s, cls, anchor) => {
+    const w = String(s).length * 8 * fs + 6, h = 17 * fs; const a = anchor || 'middle';
+    const x0 = a === 'middle' ? x - w / 2 : a === 'end' ? x - w : x;
+    const dy = free(x0, y - h + 3, w, h);
+    return enter(txt(g, x, y + dy, s, 'lbl ' + (cls || 'st-lab'), a));
+  };
   const tagBox = (g, x, y, s, cls) => {
-    const t = txt(g, x, y, s, 'lbl st-tag ' + (cls || ''), 'middle');
     const w = Math.max(32, s.length * 8.3 * fs + 16);
+    y += free(x - w / 2, y - 16 * fs, w, 22 * fs);
+    const t = txt(g, x, y, s, 'lbl st-tag ' + (cls || ''), 'middle');
     const r = el('rect', { x: x - w / 2, y: y - 16 * fs, width: w, height: 22 * fs, rx: 11 * fs, class: 'st-tagbg ' + (cls || '') }, g);
     g.insertBefore(r, t); enter(r); t.style.animationDelay = r.style.animationDelay; t.classList.add('st-in');
     return t;
@@ -33,7 +54,7 @@
     const x0 = cx + r * Math.cos(rad(a0)), y0 = cy + r * Math.sin(rad(a0));
     const x1 = cx + r * Math.cos(rad(a1)), y1 = cy + r * Math.sin(rad(a1));
     const p = el('path', { d: `M${x0},${y0} A${r},${r} 0 1 ${cw ? 1 : 0} ${x1},${y1}`, class: 'st-arc ' + (cls || ''), pathLength: 1, 'marker-end': `url(#${cls && cls.includes('rot') ? 'st-ah-acc' : 'st-ah-mom'})` }, g);
-    enter(p, 'draw');
+    enter(p, 'draw'); spark(g, p, cls && cls.includes('rot') ? 'acc' : 'mom');
     if (lab) label(g, labPos ? labPos[0] : cx, labPos ? labPos[1] : cy - r - 8, lab, cls && cls.includes('rot') ? 'st-lab acc' : 'st-lab mom');
     return p;
   }
@@ -96,12 +117,14 @@
         keyed['load' + i] = gg;
       });
       sc.names.forEach(([x, n]) => txt(base, X(x), y0 + 50, n, 'lbl name'));
+      reserve(base);
       (fr.hl || []).forEach((k) => { if (keyed[k]) keyed[k].classList.add('st-hl'); });
       (fr.hide || []).forEach((k) => { if (keyed[k]) keyed[k].classList.add('st-gone'); });
       if (fr.dim0 !== false && !usesLow) { // overall dimension chain
         const xs = [...new Set(sc.names.map((n) => n[0]).concat([0, sc.L]))].sort((a, b) => a - b);
         for (let k = 0; k < xs.length - 1; k++) if (xs[k + 1] - xs[k] > 1e-9) { el('path', { d: `M${X(xs[k]) + 2},${y0 + 82} L${X(xs[k + 1]) - 2},${y0 + 82}`, class: 'st-dim faint', 'marker-start': 'url(#st-ah-dim)', 'marker-end': 'url(#st-ah-dim)' }, base); txt(base, (X(xs[k]) + X(xs[k + 1])) / 2, y0 + 76, `${+(xs[k + 1] - xs[k]).toFixed(2)} m`, 'lbl dimt'); }
       }
+      reserve(base);
       // ---- lower diagrams ----
       let sMax = 1e-9;
       const sample = (fn, x1, x2) => { const out = []; for (let k = 0; k <= 80; k++) { const x = x1 + (x2 - x1) * k / 80; out.push([x, fn(Math.min(sc.L - 1e-7, Math.max(1e-7, x)))]); } return out; };
@@ -160,6 +183,7 @@
         const render = (t) => p.setAttribute('d', sh.xs.map((x, k) => `${k ? 'L' : 'M'}${X(x).toFixed(1)},${Y(k, t).toFixed(1)}`).join(' '));
         if (lastDeflKey === key) render(1); else H.animate(1000, render);
         lastDeflKey = key;
+        setTimeout(() => { if (!p.isConnected) return; p.setAttribute('pathLength', 1); const sp = spark(ov, p, 'acc'); sp.style.animationDelay = '0s'; }, 1050);
         const idx = (x) => Math.round(x / sc.L * (sh.xs.length - 1));
         if (d.tip) { const k = idx(at(d.tip.x)); const yy = Y(k, 1); dim(ov, X(sh.xs[k]) + 16, y0, X(sh.xs[k]) + 16, yy, d.tip.label, 'c2', 52); }
         if (d.tangent) {
@@ -180,7 +204,7 @@
       (fr.dims || []).forEach((d0, i) => dim(ov, X(at(d0.x1)), y0 + 66 + i * 22, X(at(d0.x2)), y0 + 66 + i * 22, d0.label, 'c' + (d0.c || 1)));
       (fr.flows || []).forEach((fl) => { // carry-over arrow along beam from node to node
         const x1 = X(at(fl.from)), x2 = X(at(fl.to)); const left = x2 < x1; const yy = left ? y0 + 30 : y0 - 26; const mx = (x1 + x2) / 2; const bend = left ? 40 : -34;
-        const p = el('path', { d: `M${x1 + Math.sign(x2 - x1) * 22},${yy} Q${mx},${yy + bend} ${x2 - Math.sign(x2 - x1) * 22},${yy}`, class: 'st-flow', pathLength: 1, 'marker-end': 'url(#st-ah-acc)' }, ov); enter(p, 'draw');
+        const p = el('path', { d: `M${x1 + Math.sign(x2 - x1) * 22},${yy} Q${mx},${yy + bend} ${x2 - Math.sign(x2 - x1) * 22},${yy}`, class: 'st-flow', pathLength: 1, 'marker-end': 'url(#st-ah-acc)' }, ov); enter(p, 'draw'); spark(ov, p, 'acc');
         tagBox(ov, mx, yy + bend * 0.62 + (left ? 8 : 0), fl.label, 'acc');
       });
       (fr.shares || []).forEach((sh) => tagBox(ov, X(at(sh.x)) + sh.side * 62, y0 - 34 - (sh.row || 0) * 24, sh.label, sh.cls || 'c1'));
@@ -227,6 +251,7 @@
         const away = mems.reduce((a, gm) => { const sg = gm.mm.i === n.id ? 1 : -1; return [a[0] - gm.ux * sg, a[1] - gm.uy * sg]; }, [0, 0]); const al = Math.hypot(...away) || 1;
         txt(base, x + away[0] / al * 24 - 8, y + away[1] / al * 24 + 4, n.id, 'lbl name');
       });
+      reserve(base);
       // deflected
       if (fr.defl) {
         const gd = el('g', {}, ov); const shapes = Object.values(geo).map((gm) => ({ gm, sh: T.deflectedShape(gm.mm.L, (x) => T.memberMoment(gm.mm.L, gm.mm.loads, gm.mm.Mij, gm.mm.Mji, x), () => gm.mm.I || 1, 'ss', 50) }));
@@ -283,6 +308,7 @@
         if (ld.type === 'P') H.pointLoad(gg, X(ld.x), Y(r.g.y(ld.x)) - 4, `${ld.P} kN`, 48);
         else { const top = Y(h) - 56; el('rect', { x: X(ld.x1), y: top, width: (ld.x2 - ld.x1) * s, height: 12, class: 'udlfill' }, gg); for (let k = 0; k <= 8; k++) { const xx = X(ld.x1 + (ld.x2 - ld.x1) * k / 8); el('path', { d: `M${xx},${top} L${xx},${top + 22}`, class: 'loadline thin', 'marker-end': 'url(#st-ah-load)' }, gg); } txt(gg, X((ld.x1 + ld.x2) / 2), top - 6, `${ld.w} kN/m`, 'lbl load-t'); }
       });
+      reserve(b);
       if (fr.react) { line(ov, X(0), base + 86, X(0), base + 34, 'st-force', 'st-ah-force'); tagBox(ov, X(0), base + 104, fr.react[0], 'force'); line(ov, X(L), base + 86, X(L), base + 34, 'st-force', 'st-ah-force'); tagBox(ov, X(L), base + 104, fr.react[1], 'force'); }
       if (fr.H) { line(ov, X(0) - 80, base + 10, X(0) - 14, base + 10, 'st-force', 'st-ah-force'); tagBox(ov, X(0) - 60, base - 8, fr.H, 'force'); line(ov, X(L) + 80, base + 10, X(L) + 14, base + 10, 'st-force', 'st-ah-force'); tagBox(ov, X(L) + 60, base - 8, fr.H, 'force'); }
       if (fr.crown) tagBox(ov, X(L / 2), Y(h) - 30, fr.crown, 'acc');
@@ -337,6 +363,7 @@
         const gg = el('g', { class: 'load' + ((fr.hl || []).includes(p.name) ? ' st-hl' : '') }, b); el('path', { d: `M${X(p.x)},${Y(p.y) + 4} L${X(p.x)},${Y(p.y) + 46}`, class: 'loadline', 'marker-end': 'url(#st-ah-load)' }, gg); txt(gg, X(p.x), Y(p.y) + 62, `${sc.loads[k - 1].P} kN`, 'lbl load-t');
         txt(b, X(p.x) + 12, Y(p.y) - 6, p.name, 'lbl name', 'start');
       });
+      reserve(b);
       if (fr.react) { line(ov, X(0), Y(0) - 12, X(0), Y(0) - 80, 'st-force', 'st-ah-force'); tagBox(ov, X(0), Y(0) - 92, fr.react[0], 'force'); line(ov, X(L), Y(0) - 12, X(L), Y(0) - 80, 'st-force', 'st-ah-force'); tagBox(ov, X(L), Y(0) - 92, fr.react[1], 'force'); }
       if (fr.H) { line(ov, X(0) + 10, Y(0), X(0) - 70, Y(0), 'st-force', 'st-ah-force'); tagBox(ov, X(0) - 50, Y(0) + 20, fr.H, 'force'); line(ov, X(L) - 10, Y(0), X(L) + 70, Y(0), 'st-force', 'st-ah-force'); tagBox(ov, X(L) + 50, Y(0) + 20, fr.H, 'force'); }
       (fr.dips || []).forEach((d0, i) => { const p = r.pts.find((q) => q.name === d0.name); dim(ov, X(p.x) - 14, Y(0), X(p.x) - 14, Y(p.y), d0.label, d0.known ? 'c2' : 'c1', -40); });
@@ -434,7 +461,7 @@
     return {
       svg,
       show(fr) {
-        fr = fr || {}; delay = 0;
+        fr = fr || {}; delay = 0; placed = [];
         fs = svg.getBoundingClientRect().width < 560 ? 1.65 : 1; svg.classList.toggle('big', fs > 1);
         if (fr.scene) impl = kinds[fr.scene.kind](svg, fr.scene);
         g.innerHTML = ''; impl.draw(fr, g);
