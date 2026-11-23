@@ -463,5 +463,5 @@
     return { svg };
   }
 
-  window.Viz = { beam, diagram, frame, arch, cable, cableUDL, joint, gauge, animate, sampleFn };
+  window.Viz = { beam, diagram, frame, arch, cable, cableUDL, joint, gauge, animate, sampleFn, _h: { el, txt, svgRoot, support, pointLoad, udl, animate, reduced } };
 })();
