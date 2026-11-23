@@ -104,15 +104,36 @@
   }
 
   function renderLearn(M, body) {
+    const demos = (window.DEMOS || {})[M.n] || [];
     body.innerHTML = `<div class="learn">${M.theory.map((s, i) => `
-      <article class="tcard">
+      <article class="tcard" data-i="${i}">
         <h2><span class="idx">${M.n}.${i + 1}</span>${s.h}</h2>
-        ${s.kid ? `<p class="kid"><span class="kid-tag">Simply put</span>${s.kid}</p>` : ''}
-        <div class="tbody">${s.body}</div>
+        ${demos[i] ? `<div class="demo"><div class="dstage"></div><div class="dbar"><button class="dplay" aria-label="Pause">❚❚</button><p class="dcap"></p><span class="ddots"></span></div></div>` : ''}
+        ${s.kid ? `<p class="simple">${s.kid}</p>` : ''}
+        <details class="exam"><summary>Exam notes & formulas</summary><div class="tbody">${s.body}</div></details>
       </article>`).join('')}
       <div class="next-row"><a class="btn" href="#m${M.n}-lab">Try it in the lab</a><a class="btn primary" href="#m${M.n}-practice">Practise KTU questions</a></div>
     </div>`;
+    const io = 'IntersectionObserver' in window ? new IntersectionObserver((ents) => ents.forEach((e) => { const c = e.target; if (e.isIntersecting) { if (!c._demo) c._demo = mountDemo(c, demos[+c.dataset.i]); c._demo.resume(); } else if (c._demo) c._demo.pause(); }), { threshold: 0.35 }) : null;
+    $$('.tcard', body).forEach((c) => { if (!demos[+c.dataset.i]) return; if (io) io.observe(c); else c._demo = mountDemo(c, demos[+c.dataset.i]); });
   }
+  function mountDemo(card, builder) {
+    let d; try { d = builder(); } catch (e) { $('.demo', card).remove(); return { pause() {}, resume() {} }; }
+    const st = window.Stage.create($('.dstage', card), d.scene);
+    const cap = $('.dcap', card), dots = $('.ddots', card), btn = $('.dplay', card);
+    dots.innerHTML = d.frames.map((_, k) => `<i data-k="${k}"></i>`).join('');
+    let i = 0, timer = null, userPaused = false;
+    const show = () => { const fr = d.frames[i]; st.show(Object.assign({}, fr, { scene: fr.scene || d.scene })); cap.innerHTML = fr.cap || ''; $$('i', dots).forEach((x, k) => x.classList.toggle('on', k === i)); };
+    const tick = () => { i = (i + 1) % d.frames.length; show(); };
+    const start = () => { clearInterval(timer); if (d.frames.length > 1) timer = setInterval(tick, 4200); btn.textContent = '❚❚'; btn.setAttribute('aria-label', 'Pause'); };
+    const stop = () => { clearInterval(timer); timer = null; btn.textContent = '▶'; btn.setAttribute('aria-label', 'Play'); };
+    btn.addEventListener('click', () => { if (timer) { userPaused = true; stop(); } else { userPaused = false; tick(); start(); } });
+    $$('i', dots).forEach((x) => x.addEventListener('click', () => { i = +x.dataset.k; show(); userPaused = true; stop(); }));
+    $('.dstage', card).addEventListener('click', () => { tick(); userPaused = true; stop(); });
+    show();
+    return { pause() { clearInterval(timer); }, resume() { if (!userPaused && !reducedMotion()) start(); else if (reducedMotion()) stop(); } };
+  }
+  const reducedMotion = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   /* ------------------------------ PART A ------------------------------ */
   function renderPartA(M, body) {
@@ -156,9 +177,9 @@
     const first = pending && M.gens.includes(pending.gen) ? pending : { gen: M.gens[0], preset: null };
     pending = null;
     body.innerHTML = `<div class="prac">
-      <aside class="plist" aria-label="Question types">${M.gens.map((g) => { const d = P[g]; const pr = progress[g] || {}; return `<button class="ptype${g === first.gen ? ' on' : ''}" data-gen="${g}"><b>${d.title}</b><span class="small muted">${d.method}</span>${pr.tried ? `<span class="small solved">${pr.solved || 0}/${pr.tried} correct</span>` : ''}</button>`; }).join('')}</aside>
+      <nav class="chips" aria-label="Question types">${M.gens.map((g) => { const d = P[g]; const pr = progress[g] || {}; return `<button class="chip${g === first.gen ? ' on' : ''}" data-gen="${g}">${d.title}${pr.solved ? ` <span class="tick">✓${pr.solved}</span>` : ''}</button>`; }).join('')}</nav>
       <div id="pmain" class="pmain"></div></div>`;
-    $$('.ptype', body).forEach((b) => b.addEventListener('click', () => { $$('.ptype', body).forEach((x) => x.classList.toggle('on', x === b)); mountProblem($('#pmain'), b.dataset.gen, null); }));
+    $$('.chip', body).forEach((b) => b.addEventListener('click', () => { $$('.chip', body).forEach((x) => x.classList.toggle('on', x === b)); mountProblem($('#pmain'), b.dataset.gen, null); }));
     mountProblem($('#pmain'), first.gen, first.preset);
   }
 
@@ -170,37 +191,35 @@
     window.__lastProb = prob; // used by automated tests
     host.innerHTML = `
       <div class="qcard">
-        ${opts.exam ? '' : `<div class="qtools">
-          <button class="btn sm" data-act="new">New numbers</button>
-          ${def.presets.length ? `<label class="sr" for="pre-${gen}">Past paper numbers</label><select id="pre-${gen}" class="sm"><option value="">Past paper numbers…</option>${def.presets.map((p, i) => `<option value="${i}" ${preset === p ? 'selected' : ''}>${p.label}</option>`).join('')}</select>` : ''}
-        </div>`}
-        <p class="eyebrow">${def.method} · 8 marks${preset ? ' · ' + preset.label : ' · fresh numbers'}</p>
+        <div class="qhead">
+          <span class="qmeta">${def.method} · 8 marks${preset ? ' · <b>' + preset.label + '</b>' : ''}</span>
+          ${opts.exam ? '' : `<span class="qtools">
+            ${def.presets.length ? `<label class="sr" for="pre-${gen}">Past paper numbers</label><select id="pre-${gen}" class="sm ghost"><option value="">Past papers</option>${def.presets.map((p, i) => `<option value="${i}" ${preset === p ? 'selected' : ''}>${p.label}</option>`).join('')}</select>` : ''}
+            <button class="btn sm ghost" data-act="new" title="Same question, new numbers">↻ New numbers</button></span>`}
+        </div>
         <p class="qtext">${prob.statement}</p>
         <div class="vizbox">
-          <div class="vtabs" role="tablist"></div>
           <div class="vstage"></div>
+          <div class="vtabs" role="tablist"></div>
           <div class="vextra"></div>
         </div>
-        ${prob.signNote ? '<p class="small muted">Sign convention: clockwise end moments positive (as in the KTU answer key). Moments are in kN·m.</p>' : ''}
+        ${opts.exam ? '' : `<button class="btn primary big howbtn" type="button" data-act="solve">▶ Show me how, step by step</button>`}
         <form class="answers" novalidate>
+          <p class="atitle">Your answers${prob.signNote ? ' <span class="muted small">(clockwise moments +)</span>' : ''}</p>
           ${prob.answers.map((a, i) => `<div class="arow" data-i="${i}"><label for="${gen}-a${i}">${a.label}</label><div class="ain"><input id="${gen}-a${i}" class="num" type="text" inputmode="decimal" autocomplete="off" placeholder="?"><span class="unit">${a.unit}</span><span class="mark" aria-live="polite"></span></div></div>`).join('')}
-          <div class="row wrap"><button class="btn primary" type="submit">Check answers</button>${opts.exam ? '' : '<button class="btn" type="button" data-act="hint">Hint</button><button class="btn warn" type="button" data-act="solve">Solve for me</button>'}</div>
+          <button class="btn primary" type="submit">Check</button>
         </form>
         <div class="feedback" aria-live="polite"></div>
-        <div class="steps" hidden></div>
       </div>`;
     const card = $('.qcard', host);
     mountViz(card, prob);
     if (!opts.exam) {
       $('[data-act=new]', card).addEventListener('click', () => mountProblem(host, gen, null));
       const sel = $('select', card); if (sel) sel.addEventListener('change', () => mountProblem(host, gen, sel.value === '' ? null : +sel.value));
+      $('[data-act=solve]', card).addEventListener('click', () => window.Walk.open(prob));
     }
     const form = $('form', card);
-    form.addEventListener('submit', (e) => { e.preventDefault(); const res = checkAnswers(card, prob); if (opts.onCheck) opts.onCheck(res); });
-    if (!opts.exam) {
-      $('[data-act=hint]', card).addEventListener('click', () => showSteps(card, prob, 1, true));
-      $('[data-act=solve]', card).addEventListener('click', () => showSteps(card, prob, 1, false));
-    }
+    form.addEventListener('submit', (e) => { e.preventDefault(); const res = checkAnswers(card, prob, opts.exam); if (opts.onCheck) opts.onCheck(res); });
     return prob;
   }
 
@@ -298,7 +317,7 @@
     }
     return { title, text, u };
   }
-  function checkAnswers(card, prob) {
+  function checkAnswers(card, prob, exam) {
     const fb = $('.feedback', card); fb.innerHTML = '';
     let ok = 0, firstWrong = null;
     prob.answers.forEach((a, i) => {
@@ -311,7 +330,7 @@
     });
     const total = prob.answers.length;
     mark(prob.id, ok === total);
-    const head = h(`<div class="score ${ok === total ? 'good' : 'bad'}"><b>${ok}/${total}</b> correct${ok === total ? '. Well done: this is exactly what the examiner expects.' : '. Read the note below, try again, or press <i>Solve for me</i>.'}</div>`);
+    const head = h(`<div class="score ${ok === total ? 'good' : 'bad'}"><b>${ok}/${total}</b> correct${ok === total ? '. Well done: this is exactly what the examiner expects.' : '. Fix the red ones, or watch the solution.'}</div>`);
     fb.appendChild(head);
     if (firstWrong) {
       const { a, r } = firstWrong;
@@ -322,8 +341,10 @@
         const diag = diagnose(r.ratio);
         const def = prob.def;
         const restated = a.linear && def.loadKeys.length ? window.restateProblem(prob.id, prob.params, def.loadKeys, r.ratio) : null;
-        const box = h(`<div class="cons"><h4>${c.title}</h4><div class="cons-grid"><div><p>${c.text}</p>${diag ? `<p class="diag"><b>Likely slip:</b> ${diag}</p>` : ''}${restated ? `<div class="restate"><p class="eyebrow">Your answer is correct for this question, with the load${def.loadKeys.length > 1 ? 's' : ''} changed:</p><p>${restated}</p></div>` : ''}</div><div class="gaugebox"></div></div></div>`);
+        const more = (diag || restated) ? `<details class="why"><summary>Why is my number off?</summary>${diag ? `<p class="diag">${diag}</p>` : ''}${restated ? `<div class="restate"><p class="small muted">Your number is right for this question, with the load${def.loadKeys.length > 1 ? 's' : ''} changed:</p><p>${restated}</p></div>` : ''}</details>` : '';
+        const box = h(`<div class="cons"><h4>${c.title}</h4><div class="cons-grid"><div><p>${c.text}</p>${more}${exam ? '' : '<button class="btn sm" data-act="how2">▶ Show me how</button>'}</div><div class="gaugebox"></div></div></div>`);
         fb.appendChild(box);
+        const h2 = $('[data-act=how2]', box); if (h2) h2.addEventListener('click', () => window.Walk.open(prob));
         if (c.u !== null) V.gauge($('.gaugebox', box), c.u, 'Real stress if built from your answer');
         else { $('.gaugebox', box).remove(); $('.cons-grid', box).classList.add('one'); }
         // structure animation: switch to the matching diagram first
@@ -339,24 +360,6 @@
       if (card._beam) { card._beam.clearGhost(); }
     }
     return { ok, total };
-  }
-
-  /* ---------------- step by step ---------------- */
-  function showSteps(card, prob, upto, hintOnly) {
-    const box = $('.steps', card); box.hidden = false;
-    const all = prob.steps; const n = Math.min(upto, all.length);
-    box.innerHTML = `<h3>${hintOnly ? 'Hint' : 'Solution, step by step'}</h3><p class="small muted">Legend: <b class="g">given in question</b> <b class="c">worked out earlier</b> <b class="ans">answer</b></p>` +
-      all.slice(0, n).map((s, i) => `<article class="step"><div class="snum">${i + 1}</div><div class="sbody"><h4>${s.t}</h4>${s.kid ? `<p class="kid"><span class="kid-tag">Simply put</span>${s.kid}</p>` : ''}<div class="work">${s.w}</div></div></article>`).join('') +
-      (n < all.length ? `<div class="row"><button class="btn primary" data-act="next">Next step (${n + 1}/${all.length})</button><button class="btn" data-act="all">Show all steps</button></div>` : '<p class="small muted">Done. Now press <b>New numbers</b> and try the same type yourself.</p>');
-    const nx = $('[data-act=next]', box), al = $('[data-act=all]', box);
-    if (nx) nx.addEventListener('click', () => { showSteps(card, prob, n + 1, false); const last = $$('.step', box).pop(); if (last) last.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); });
-    if (al) al.addEventListener('click', () => showSteps(card, prob, all.length, false));
-    if (!hintOnly && n === 1) box.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    // hover a given number → flash matching value in the question
-    $$('.g', box).forEach((b) => b.addEventListener('mouseenter', () => {
-      const t = b.textContent.trim().split(' ')[0];
-      $$('.qtext .g', card).forEach((q) => { if (q.textContent.trim().split(' ')[0] === t) { q.classList.remove('flash'); void q.offsetWidth; q.classList.add('flash'); } });
-    }));
   }
 
   /* ------------------------------ LABS ------------------------------ */
