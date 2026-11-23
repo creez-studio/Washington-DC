@@ -3,21 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#070b14">
 <title>TOS III Study Lab</title>
 <meta name="description" content="Interactive study app for KTU AET201 Theory of Structures III: theory, animated structures, KTU past-paper problems with step-by-step solutions and a mock exam.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Manrope:wght@400;500;600;700;800&family=Sora:wght@500;600;700&display=swap">
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
 <header class="top">
   <div class="top-in">
-    <a class="brand" href="#home"><span class="b1">TOS</span><span class="b2">III</span><span class="b3">Study Lab</span></a>
+    <a class="brand" href="#home"><span class="b1">Structures</span><span class="b2">TOS III</span><span class="b3">Study Lab</span></a>
     <nav class="nav" aria-label="Main">
       <a href="#home">Home</a><a href="#m1">M1</a><a href="#m2">M2</a><a href="#m3">M3</a><a href="#m4">M4</a><a href="#m5">M5</a><a href="#pyq">Past papers</a><a href="#exam">Mock exam</a>
     </nav>
-    <button class="themebtn" id="themeBtn" type="button" aria-label="Switch light or dark theme">◐</button>
+    <button class="themebtn" id="themeBtn" type="button" aria-label="Switch light or dark theme"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="currentColor"/></svg></button>
   </div>
 </header>
 <main id="view" class="wrap"></main>
@@ -25,13 +26,16 @@
   <p>KTU B.Arch S3 · AET201 Theory of Structures III (2021 scheme). Every number is computed live and cross-checked against an independent finite-element solver and the official KTU answer key.</p>
 </footer>
 <div class="wm" aria-hidden="true">Made by a student</div>
+<button class="guide-fab" id="guideFab" type="button" aria-label="Guide me around this page"><svg viewBox="0 0 48 56" aria-hidden="true"><path d="M6 3 L6 44 L16 35 L23 51 L31 47.5 L24 32 L38 32 Z" fill="currentColor" stroke="none"/><circle cx="13" cy="22" r="2.6" fill="#03141c"/><circle cx="20" cy="25" r="2.6" fill="#03141c"/></svg><span>Guide</span></button>
 <script src="js/engine.js"></script>
 <script src="js/problems.js"></script>
 <script src="js/content.js"></script>
 <script src="js/viz.js"></script>
 <script src="js/stage.js"></script>
 <script src="js/steps.js"></script>
+<script src="js/why.js"></script>
 <script src="js/walk.js"></script>
+<script src="js/tour.js"></script>
 <script src="js/demos.js"></script>
 <script src="js/app.js"></script>
 </body>
