@@ -23,3 +23,19 @@ Full institutional references and image credits appear in chapter 12 and both pr
 The final study is a desk-based architectural and urban morphology analysis. Documented observations, analytical interpretations and evidential scope are distinguished; no resident-perception, traffic, building-height or accessibility survey is fabricated. The 37-sheet A4 editions retain every chapter finding, all 15 examples, the 10 relationship conclusions and 25 numbered sources, regardless of selected map state.
 
 Print: use A4 / Export, select an orientation, then Print / Save as PDF. Enable background graphics; disable browser headers and footers. PDF editions are also supplied in `print/`.
+
+---
+
+# TOS III Study Lab (KTU AET201)
+
+An interactive study app for KTU B.Arch S3 **AET201 Theory of Structures III** (2021 scheme), in `dist/tos/`. It is static (no build step) and is published by the same Pages workflow at `/tos/`.
+
+- **Learn**: beginner-friendly theory for all 5 modules, with a plain-language explanation for each idea, standard results and Part A model answers.
+- **Lab**: sliders with live animations: beam playground (deflection, tension/compression colours, span/250 check), supports vs moment, twisting a joint until it balances (slope deflection), moment distribution flowing row by row, arch thrust and cable tension.
+- **Practise**: every repeating KTU question family, with the exact past-paper numbers or fresh random numbers. Wrong answers animate the consequence (your deflected shape vs the real one, cracks, a stress-strain gauge), show the question your answer would be right for, and diagnose common slips. *Solve for me* gives step-by-step working with every number colour-coded by where it came from.
+- **Past papers**: Dec 2022, Jun 2024, Nov 2024 analysed by question family; each numerical question opens with its exam numbers.
+- **Mock exam**: KTU pattern (5 × 4 + 5 × 8 = 60 marks, 3 hours), auto-marked Part B.
+
+Accuracy: `node tools/tos-verify.js` checks the engine against an independent 2-D finite-element frame solver (random beams, frames, propped/fixed beams, three-moment cases), static equilibrium of arches and cables, and the official KTU Dec 2022 answer key. About 1,200 checks pass on every run.
+
+Syllabus note: AET201 does not prescribe any IS code. IS 456:2000 is mentioned only as real-world context in the labs.
